@@ -17,7 +17,6 @@ jobs:
         PER_PAGE=100
         MAX_PAGES=10
         QUERY="filename:CNAME"
-        TOTAL_RESULTS=0
         echo "domains:" > results.yml
         while [ $PAGE -le $MAX_PAGES ]; do
           RESPONSE=$(curl -G -H "Accept: application/vnd.github+json" \
@@ -27,14 +26,10 @@ jobs:
                           --data-urlencode "page=$PAGE" \
                           "https://api.github.com/search/code")
           echo $RESPONSE
-          echo "$RESPONSE" | jq -r '.items[] | "- domain: \(.repository.full_name)\n  owner: \(.repository.owner.login)\n  repo: \(.repository.name)\n  last_scan: \(.repository.updated_at)"' >> results.yml
-          RESULT_COUNT=$(echo "$RESPONSE" | jq '.items | length')
-          TOTAL_RESULTS=$((TOTAL_RESULTS + RESULT_COUNT))
+          echo "$RESPONSE" | jq -r '.items[] | "- domain: \(.repository.full_name)\n  owner: \(.repository.owner.login)\n  repo: \(.repository.name)\n  cname_file_url: \(.url)"' >> results.yml
+          TOTAL_COUNT=$(echo "$RESPONSE" | jq '.total_count')
           PAGE=$((PAGE + 1))
-          if [ $RESULT_COUNT -lt $PER_PAGE ]; then
-            break
-          fi
-          if [ $RESULT_COUNT -eq 0 ]; then
+          if [ $((PAGE * PER_PAGE)) -ge $TOTAL_COUNT ]; then
             break
           fi
         done
