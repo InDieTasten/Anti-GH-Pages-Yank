@@ -15,7 +15,7 @@ jobs:
       run: |
         PAGE=1
         PER_PAGE=100
-        MAX_PAGES=10
+        MAX_PAGES=5
         QUERY="filename:CNAME"
         echo "domains:" > results.yml
         while [ $PAGE -le $MAX_PAGES ]; do
@@ -25,7 +25,6 @@ jobs:
                           --data-urlencode "per_page=$PER_PAGE" \
                           --data-urlencode "page=$PAGE" \
                           "https://api.github.com/search/code")
-          echo $RESPONSE
           echo "$RESPONSE" | jq -r '.items[] | "- domain: \(.repository.full_name)\n  owner: \(.repository.owner.login)\n  repo: \(.repository.name)\n  cname_file_url: \(.url)"' >> results.yml
           TOTAL_COUNT=$(echo "$RESPONSE" | jq '.total_count')
           PAGE=$((PAGE + 1))
