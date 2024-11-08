@@ -22,6 +22,7 @@ jobs:
           RESPONSE=$(curl -s -H "Accept: application/vnd.github.v3+json" \
                           -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                           "https://api.github.com/search/code?q=path%3A**/CNAME&type=code&per_page=$PER_PAGE&page=$PAGE")
+          echo $RESPONSE
           echo "$RESPONSE" | jq -r '.items[] | "- domain: \(.repository.full_name)\n  owner: \(.repository.owner.login)\n  repo: \(.repository.name)\n  last_scan: \(.repository.updated_at)"' >> results.yml
           RESULT_COUNT=$(echo "$RESPONSE" | jq '.items | length')
           TOTAL_RESULTS=$((TOTAL_RESULTS + RESULT_COUNT))
