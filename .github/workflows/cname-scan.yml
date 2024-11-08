@@ -1,0 +1,41 @@
+name: CNAME Scan
+
+on:
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Query GitHub for CNAME files
+      run: |
+        PAGE=1
+        PER_PAGE=1000
+        MAX_PAGES=10
+        TOTAL_RESULTS=0
+        echo "domains:" > results.yml
+        while [ $PAGE -le $MAX_PAGES ]; do
+          RESPONSE=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+                          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                          "https://api.github.com/search/code?q=path:**/CNAME&type=code&per_page=$PER_PAGE&page=$PAGE")
+          echo "$RESPONSE" | jq -r '.items[] | "- domain: \(.repository.full_name)\n  owner: \(.repository.owner.login)\n  repo: \(.repository.name)\n  last_scan: \(.repository.updated_at)"' >> results.yml
+          RESULT_COUNT=$(echo "$RESPONSE" | jq '.items | length')
+          TOTAL_RESULTS=$((TOTAL_RESULTS + RESULT_COUNT))
+          PAGE=$((PAGE + 1))
+          if [ $RESULT_COUNT -lt $PER_PAGE ]; then
+            break
+          fi
+          if [ $RESULT_COUNT -eq 0 ]; then
+            break
+          fi
+        done
+
+    - name: Upload results
+      uses: actions/upload-artifact@v2
+      with:
+        name: cname-scan-results
+        path: results.yml
